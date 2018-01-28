@@ -1,0 +1,71 @@
+
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<title>HW1 - Part A</title>
+		<meta charset="utf-8">
+		<style>body {margin: 0px; overflow: hidden;}</style>
+	</head>
+	<body>
+		<div id="container"></div>
+		
+		<script src="js/three.min.js"></script>
+		<script id="vertexShader" type="x-shader/x-vertex">
+
+			precision mediump float;
+			precision mediump int;
+
+			uniform mat4 modelViewMatrix;
+      			uniform mat4 projectionMatrix;
+
+			attribute vec3 position;
+			
+			uniform vec4 my_color;
+      			uniform float time;
+
+			varying vec3 vPosition;
+			varying vec4 vColor;
+
+			void main()	
+			{
+
+				
+				vec3 pos = position;
+
+       	 			//uncomment for basic vertex displacement
+       				// pos.x += sin(pos.x * 10.0 + time) * 0.1;
+       				// pos.y += cos(pos.y * 10.0 + time) * 0.2;
+       				// pos.z += sin(pos.z * 20.0 + time) * 0.3;
+
+        			vPosition = pos;
+				vColor = my_color;
+
+				gl_Position = projectionMatrix * modelViewMatrix * vec4( pos, 1.0 );
+			
+      			}
+		</script>
+
+		<script id="fragmentShader" type="x-shader/x-fragment">
+
+			precision mediump float;
+			precision mediump int;
+
+			uniform float time;
+
+			varying vec3 vPosition;
+			varying vec4 vColor;
+
+			void main()	
+			{
+				vec4 color;
+				color = vec4( vColor );
+				color.r += sin( vPosition.x * 10.0 + time ) * 0.5;
+       				color.b += cos( vPosition.x * 5.0 + time  ) * 1.0;
+				gl_FragColor = color;
+			}
+		</script>
+		<script src="js/a.js"></script>
+
+	</body>
+</html>
+
