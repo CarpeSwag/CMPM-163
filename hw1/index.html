@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>CMPM 163 - Homework 1</title>
+	<style>
+		body {}
+		p {width: 600px;}
+		img {max-width: 200px; max-height: 200px;}
+		</style>
+</head>
+<body>
+	<center>
+	<h1>Homework Assignment 1</h1>
+	<h2>James Garbagnati</h2>
+	
+	<p> Click on any of the headers to redirect to the respective webpage.</p>
+	
+	<a href="./partA.html"><h2> Part A </h2></a>
+	
+	<p>For Part A, I have an object that uses a vertex displacing shader, a textured shader, and a shader that responds to light. I wanted to have the Walt Disney model also be textured, but I could not get both the texture and the light working in tandem.</p>
+	
+	<a href="https://i.imgur.com/XG3OsDh.png"><img src="https://i.imgur.com/XG3OsDh.png" /></a>
+	
+	<a href="./partB.html"><h2> Part B </h2></a>
+	
+	<p>In Part B, I wanted Jeff Goldblum to remain sharp as ever, so I applied a sharpening effect. While playing around with values, I discovered I could also brighten him further. He's now sharper and brighter than ever.</p>
+	
+	<a href="https://i.imgur.com/y7GYlJp.png"><img src="https://i.imgur.com/y7GYlJp.png" /></a>
+	
+	<a href="./partC.html"><h2> Part C </h2></a>
+	
+	<p>Part C is Conway's Game of Life rendered onto a cube. I'm actually pretty sure I did this completely incorrectly as it's still rendering the texture as if it's to screen space, but in the shape of a rotating cube. That said, I think that looks kinda awesome and way better than it would've if I had just had each side as the same game of life repeated. Also the effect it makes around the edges of the cube is pretty coolio.</p>
+	
+	<a href="https://i.imgur.com/1xrG0pL.png"><img src="https://i.imgur.com/1xrG0pL.png" /></a>
+	
+	<h2> Part D </h2>
+	
+	<a href="https://i.imgur.com/fAZwjJy.png"><img src="https://i.imgur.com/fAZwjJy.pngg" /></a>
+	
+	<p>I was playing around with various three.js projects I found online and this one struck out to me in particular: <a href="http://cabbi.bo/enough/">http://cabbi.bo/enough/</a>. The effect is kind of hard to see in that image due to the nature of it (particles immediately disperse and it becomes hard to capture a good image that actually encapsulates it). </p>
+	
+	<p>I was extremely satisfied by the mouse trail particle effects, specifically, the transformations of the trail from 2D space (the screen's mouse position) to 3D space in the world. The visual effect is fairly straightforward, particle effects spawn out from where the mouse is; however, the mouse trail, instead of being in 2D space, is actually in the world's space, and can weave in and out of objects within the world. This is a pretty simple transformation, but one that I have either never seen or noticed in games. I'm always a really huge fan of visual effects on the UI or dealing with the UI, so having the mouse feel like it's weaving in and out of objects within the world really excites me.</p>
+	
+	<p>The effect plays and changes with the camera, as where the mouse is in 3D space depends entirely on where the camera's position in the world. The effect does not really do much if anything in terms of altering the rendered world except existing within it. In certain scenes, the skew might be more prevalent, as the scenes with the spires feels like it gives the particles more of the z-depth than the scenes before it.</p>
+
+	</center>
+</body>
+</html>
