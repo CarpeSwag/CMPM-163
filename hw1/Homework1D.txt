@@ -1,0 +1,7 @@
+https://i.imgur.com/fAZwjJy.png
+
+I was playing around with various three.js projects I found online and this one struck out to me in particular: http://cabbi.bo/enough/. The effect is kind of hard to see in that image due to the nature of it (particles immediately disperse and it becomes hard to capture a good image that actually encapsulates it).
+	
+I was extremely satisfied by the mouse trail particle effects, specifically, the transformations of the trail from 2D space (the screen's mouse position) to 3D space in the world. The visual effect is fairly straightforward, particle effects spawn out from where the mouse is; however, the mouse trail, instead of being in 2D space, is actually in the world's space, and can weave in and out of objects within the world. This is a pretty simple transformation, but one that I have either never seen or noticed in games. I'm always a really huge fan of visual effects on the UI or dealing with the UI, so having the mouse feel like it's weaving in and out of objects within the world really excites me.
+	
+The effect plays and changes with the camera, as where the mouse is in 3D space depends entirely on where the camera's position in the world. The effect does not really do much if anything in terms of altering the rendered world except existing within it. In certain scenes, the skew might be more prevalent, as the scenes with the spires feels like it gives the particles more of the z-depth than the scenes before it.
