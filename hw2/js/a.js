@@ -5,7 +5,7 @@ var terrainVS, terrainFS;
 var skyboxVS, skyboxFS;
 var waterVS, waterFS;
 var textureHeightMap, textureLow, textureMed, textureHigh,
-	textureWaterNoise, textureWater;
+	textureWaterNoise;
 var renderCounter = 0;
 var FRAMES_TIL_RENDER = 30;
 var WATER_RERENDER = 10;
@@ -48,14 +48,13 @@ function init() {
 	gui.add(opt, "displaceAmount", 25, 100, 1.0);
 	gui.add(opt, "displaceExponent", 0.1, 10, 0.1);
 	gui.add(opt, "waterHeight", 0, 50, 1.0);
-	gui.add(opt, "waterRoughness", 0.5, 25, 0.5);
+	gui.add(opt, "waterRoughness", 0.0, 25, 0.5);
 	
 	// Set up initial map creation
 	textureHeightMap = new THREE.Texture(createHeightMapCanvas('heightmap-canvas'));
 	textureLow = new THREE.TextureLoader().load( 'res/low.jpg');
 	textureMed = new THREE.TextureLoader().load( 'res/med.jpg');
 	textureWaterNoise = new THREE.Texture(createWaterCanvas('water-canvas', time));
-	textureWater = new THREE.TextureLoader().load( 'res/water.jpg');
 	
 	textureHeightMap.needsUpdate = true;
 	textureWaterNoise.needsUpdate = true;
@@ -64,7 +63,7 @@ function init() {
 
 	camera = new THREE.PerspectiveCamera( 50.0, window.innerWidth / window.innerHeight, 0.1, 1500 );
 	camera.position.x = 50;
-	camera.position.y = 50;
+	camera.position.y = 25;
 	camera.position.z = 0;
 	
 	//adds a default mouse listener to control the camera rotation and zoom
@@ -75,12 +74,23 @@ function init() {
 
 	// geometry
 
-	var terrainGeometry = new THREE.PlaneGeometry( 500, 500, 400, 400 );
-	var waterGeometry = new THREE.PlaneGeometry( 500, 500, 100, 100 );
-	var skyboxGeometry = new THREE.BoxGeometry( 500, 500, 500 );
+	var terrainGeometry = new THREE.PlaneGeometry( 250, 250, 400, 400 );
+	var waterGeometry = new THREE.PlaneGeometry( 250, 250, 100, 100 );
+	var skyboxGeometry = new THREE.BoxGeometry( 1000, 1000, 1000 );
 
 	// material
-
+	
+	var cubeMap = new THREE.CubeTextureLoader()
+		.setPath("res/skybox/")
+		.load( [
+			'posx.jpg',
+			'negx.jpg',
+			'posy.jpg',
+			'negy.jpg',
+			'posz.jpg',
+			'negz.jpg'
+		]);
+	
 	var terrainUniforms =  {
 		displaceAmt: { type: "f", value: opt.displaceAmount },
 		displaceExpt: { type: "f", value: opt.displaceExponent },
@@ -98,7 +108,7 @@ function init() {
 	var waterUniforms =  {
 		displaceAmt: { type: "f", value: opt.waterRoughness },
 		tPic: { type: "t", value: textureWaterNoise },
-		tWater: { type: "t", value: textureWater }
+		envMap: { type: "t", value: cubeMap }
 	};
 
 	var waterMaterial = new THREE.RawShaderMaterial( {
@@ -108,16 +118,6 @@ function init() {
 	} );
 	
 	
-	var cubeMap = new THREE.CubeTextureLoader()
-		.setPath("res/skybox/")
-		.load( [
-			'posx.jpg',
-			'negx.jpg',
-			'posy.jpg',
-			'negy.jpg',
-			'posz.jpg',
-			'negz.jpg'
-		]);
 	var skyboxUniforms = { "tCube": { type: "t", value: cubeMap } };
 	
 	var skyboxMaterial = new THREE.RawShaderMaterial({
