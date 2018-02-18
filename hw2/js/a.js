@@ -62,12 +62,13 @@ function init() {
 	container = document.getElementById( 'container' );
 
 	camera = new THREE.PerspectiveCamera( 50.0, window.innerWidth / window.innerHeight, 0.1, 1500 );
-	camera.position.x = 50;
-	camera.position.y = 25;
-	camera.position.z = 0;
+	camera.position.x = 200;
+	camera.position.y = 100;
+	
 	
 	//adds a default mouse listener to control the camera rotation and zoom
 	var controls = new THREE.OrbitControls( camera );
+	controls.target = new THREE.Vector3( 0, -150, 0 );
 	controls.update();
 
 	scene = new THREE.Scene();
@@ -157,7 +158,7 @@ function init() {
 
 function createHeightMapCanvas(eleId) {
 	var canvas = document.getElementById(eleId);
-	var size = Math.pow(2, opt.size);
+	var size = Math.pow(2, opt.heightMapSize);
 	var cubeSize = Math.pow(2, opt.terrainRoughness);
 	var height = width = size;
 	canvas.width  = width;
