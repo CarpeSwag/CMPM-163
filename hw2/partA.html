@@ -115,8 +115,6 @@
 	}
 	
 	void main() {
-		vNormal = vec3(1.0,1.0,1.0);
-		
 		vec4 clr = texture2D(tPic, uv);
 		float displace = clr.r * displaceAmt; //displacement;
         vec3 newPosition = (position.xyz + normal.xyz * displace).xyz;
@@ -149,7 +147,7 @@
 
 		vec4 envColor = textureCube( envMap, vec3( reflection.x, -reflection.yz ) );
 		vec4 waterColor = vec4(0.188, 0.29, 0.39, 1.0); // Tint the water dark blueish
-		vec4 finalColor = mix(envColor, waterColor, 0.25);
+		vec4 finalColor = mix(envColor, waterColor, 0.5);
 		
 		float fresnel = 1.0 - dot(vI, vNormal);
 		
