@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>CMPM 163 - Homework 2</title>
+	<style>
+		body {}
+		p {width: 600px;}
+		img {max-width: 400px; max-height: 400px;}
+		</style>
+</head>
+<body>
+	<center>
+	<h1>Homework Assignment 2</h1>
+	<h2>James Garbagnati</h2>
+	
+	<p> Click on any of the headers to redirect to the respective webpage.</p>
+	<p> Click on either screenshot to bring up a larger version.</p>
+	
+	<a href="./partA.html"><h2> Part A </h2></a>
+	
+	<p>For part A, I created a relatively simple scene of rocks in a body of water. To accomplish this, I draw a canvas with the Perlin2D noise function and pass that canvas in as the height map. Initially, I wanted to create a very blocky output, so I added a method to build out the Perlin noise values into chunks, but this output did not appear as I had hope. Regardless, I left it in as the "terrainRoughness" category. Once I was done playing with the terrain generation, I set up the water in the scene. Initially, I was going to use a simple plane, but felt that was not fun enough, so I built another canvas using a Perlin3D noise function to use as a heightmap for the water. The third dimension of the water heightmap is time so that the water stays animated and appears to have waves. Additionally, I adjusted the water's shader to both reflect the skybox and use the Fresnel value to determine the alpha value of the fragment shader output. Because the water's normals are all messy due to the heightmap, I made sure the lower bounds on the water's roughness in the GUI can be set to 0 to make it perfectly flat and allow the user to see the reflectivity.</p>
+	
+	<a href="https://gfycat.com/SnarlingFarawayArachnid"><img src="https://thumbs.gfycat.com/SnarlingFarawayArachnid-size_restricted.gif" /></a>
+	
+	<br /><br />
+	
+	<a href="./partB.html"><h2> Part B </h2></a>
+	
+	<p>For part B, I recreated the evaporating shader that was linked in Slack using the 3D Perlin noise function and a alpha mask. I used the 3D Perlin noise function instead of the 2D one so that I could pass in a third value that allowed various points to be different from one another without too much fiddling with the system itself. I used this shader to create a simple flame particle.</p>
+	
+	<a href="https://i.imgur.com/EgnrIEQ.png"><img src="https://i.imgur.com/EgnrIEQ.png" /></a>
+	
+	</center>
+</body>
+</html>

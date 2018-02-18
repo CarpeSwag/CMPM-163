@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<title>HW2 - Part A</title>
+	<meta charset="utf-8">
+	<style>
+	body {
+		margin: 0px;
+		overflow: hidden;
+	}
+	
+	#heightmap-canvas, #water-canvas {
+		display: none;
+	}
+	
+	#info {
+		position: absolute;
+		top: 0px;
+		width: 100%;
+		padding: 5px;
+		font-family:Monospace;
+		font-size:13px;
+		text-align:center;
+		color: #ffffff;
+	}
+
+	a {
+		color: #ffffff;
+	}
+	</style>
+</head>
+<body>
+	<canvas id='heightmap-canvas'></canvas>
+	<canvas id='water-canvas'></canvas>
+	<div id="container"></div>
+	
+	<script src="js/three.min.js"></script>
+	<script src="js/OrbitControls.js"></script>
+	<script src="js/dat.gui.min.js"></script>
+	<script src="js/perlin.js"></script>
+	
+	<!-- Terrain Shaders -->
+    <script id="terrain-vs" type="x-shader/x-vertex">
+    precision mediump float;
+	
+	uniform mat4 modelMatrix;
+	uniform mat4 viewMatrix;
+    uniform mat4 projectionMatrix;
+	uniform sampler2D tPic;
+
+    attribute vec3 position;
+	attribute vec2 uv;
+	attribute vec3 normal;
+
+	uniform float displaceAmt; // controls the amount of vertex displacement...
+	uniform float displaceExpt; // vertex displacement exponent
+	
+    varying float vDisplace; 
+	varying vec2 vUv;
+
+	void main() {
+		vUv = uv;
+		
+		vec4 clr = texture2D(tPic, uv);
+		vDisplace = pow(clr.r, abs(displaceExpt)) * displaceAmt; //displacement;
+        vec3 newPosition = (position.xyz + normal.xyz * vDisplace).xyz;
+      
+       	gl_Position = projectionMatrix  * viewMatrix * modelMatrix  * vec4( newPosition, 1.0 );
+    }
+	</script>
+	<script id="terrain-fs" type="x-shader/x-fragment">
+    precision mediump float;
+
+    uniform sampler2D tLow, tMed;
+
+    varying vec2 vUv;
+    varying float vDisplace;
+	uniform float displaceAmt;
+
+    void main() {
+		vec4 low = texture2D(tLow, vUv);
+		vec4 med = texture2D(tMed, vUv);
+
+		float zOffset = vDisplace / displaceAmt;
+
+		vec4 mix1 = mix(low, med, min(1.0,zOffset*8.0));
+
+
+		gl_FragColor = vec4( mix1.rgb, 1.0 );        
+	}
+	</script>
+	
+	<!-- Water Shader -->
+	<script id="water-vs" type="x-shader/x-vertex">
+    precision mediump float;
+	
+	uniform mat4 modelMatrix;
+	uniform mat4 viewMatrix;
+    uniform mat4 projectionMatrix;
+	uniform sampler2D tPic;
+	uniform float displaceAmt;
+	uniform vec3 cameraPosition;
+
+    attribute vec3 position;
+	attribute vec2 uv;
+	attribute vec3 normal;
+	
+	varying vec3 vNormal;
+	varying vec3 vI;
+
+	float height(vec2 point) {
+		vec4 clr = texture2D(tPic, point);
+		float displace = clr.r * displaceAmt; //displacement;
+        return vec3((position.xyz + normal.xyz * displace).xyz).z;
+	}
+	
+	void main() {
+		vec4 clr = texture2D(tPic, uv);
+		float displace = clr.r * displaceAmt; //displacement;
+        vec3 newPosition = (position.xyz + normal.xyz * displace).xyz;
+	
+		// Calculate new normal
+		vec3 off = vec3(1.0, 1.0, 0.0);
+		float hL = height(uv.xy - off.xz);
+		float hR = height(uv.xy + off.xz);
+		float hD = height(uv.xy - off.zy);
+		float hU = height(uv.xy + off.zy);
+		vNormal = normalize(vec3(hL - hR, hD - hU, 2.0));
+		
+		vec4 worldPosition = modelMatrix * vec4( newPosition, 1.0 );
+		
+		vI = normalize(worldPosition.xyz - cameraPosition);
+      
+       	gl_Position = projectionMatrix * viewMatrix * worldPosition;
+    }
+	</script>
+	<script id="water-fs" type="x-shader/x-fragment">
+    precision mediump float;
+
+	uniform samplerCube envMap;
+
+	varying vec3 vNormal;
+	varying vec3 vI;
+
+    void main() {
+		vec3 reflection = reflect(vI, vNormal);
+
+		vec4 envColor = textureCube( envMap, vec3( reflection.x, -reflection.yz ) );
+		vec4 waterColor = vec4(0.188, 0.29, 0.39, 1.0); // Tint the water dark blueish
+		vec4 finalColor = mix(envColor, waterColor, 0.5);
+		
+		float fresnel = 1.0 - dot(vI, vNormal);
+		
+		gl_FragColor = vec4(finalColor.xyz, fresnel);
+	}
+	</script>
+	
+	<!-- Skybox Shaders -->
+	<script id="skybox-vs" type="x-shader/x-vertex">
+	uniform mat4 modelMatrix;
+	uniform mat4 viewMatrix;
+    uniform mat4 projectionMatrix;
+
+    attribute vec3 position; 
+
+	varying vec3 vWorldPosition;
+	
+	void main() {
+		vec4 worldPosition = modelMatrix * vec4( position, 1.0 );
+		vWorldPosition = worldPosition.xyz;
+
+		vec4 p = viewMatrix * modelMatrix * vec4(position, 1.0);
+		gl_Position = projectionMatrix * p;	
+    }
+    </script>
+    <script id="skybox-fs" type="x-shader/x-fragment">
+	precision mediump float;
+	
+	uniform samplerCube tCube;
+	varying vec3 vWorldPosition;
+
+	void main() {
+		gl_FragColor = textureCube( tCube, vec3(  vWorldPosition ) );
+	}
+    </script>
+	
+	<script src="js/a.js"></script>
+</body>
+</html>
+
