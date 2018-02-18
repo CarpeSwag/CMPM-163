@@ -17,10 +17,8 @@ function init() {
 
 	//initialize point attributes
 
-	//var amount = 10000;
-	//var radius = 25;
-	var amount = 20;
-	var radius = 20;
+	var amount = 2000;
+	var radius = 50;
 
 	var positions = new Float32Array( amount * 3 );
 	var colors = new Float32Array( amount * 3 );
@@ -40,17 +38,15 @@ function init() {
 		if ( vertex.x < 0 ) {
 
 			color.setHSL( 0.5 + 0.1 * ( i / amount ), 0.7, 0.5 );
-			//color.setRGB( 1.0, 0.0, 0.0 );
 
 		} else {
 
 			color.setHSL( 0.0 + 0.1 * ( i / amount ), 0.9, 0.5 );
-			//color.setRGB( 0.0, 0.0, 1.0 );
 		}
 
 		color.toArray( colors, i * 3 );
 
-		sizes[i] = 20;
+		sizes[i] = Math.floor(Math.random() * 20) + 10;
 		seeds[i] = Math.floor(Math.random() * 512);
 	}
 
@@ -131,7 +127,7 @@ function render() {
 	var attributes = geometry.attributes;
 
 	for ( var i = 0; i < attributes.size.array.length; i++ ) {
-		//attributes.size.array[ i ] = 20 + 6 * Math.sin( 0.1 * i + time );
+		attributes.size.array[ i ] += 0.01 * Math.sin( 0.1 * i + time );
 	}
 
 	attributes.size.needsUpdate = true;
