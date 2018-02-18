@@ -25,7 +25,7 @@ function init() {
 		cubeSize: 2,
 		perlinFactor: 13,
 		heightUpperLimit: 256,
-		displaceAmount: 25,
+		displaceAmount: 50,
 		displaceExponent: 1.0,
 		waterHeight: 0,
 	};
@@ -36,7 +36,7 @@ function init() {
 	gui.add(opt, "cubeSize", 0, 5, 1.0);
 	gui.add(opt, "perlinFactor", 1, 50, 1.0);
 	gui.add(opt, "heightUpperLimit", 0, 256, 1.0);
-	gui.add(opt, "displaceAmount", 1, 100, 1.0);
+	gui.add(opt, "displaceAmount", 25, 100, 1.0);
 	gui.add(opt, "displaceExponent", 0.1, 10, 0.1);
 	gui.add(opt, "waterHeight", 0, 5);
 	
@@ -63,7 +63,7 @@ function init() {
 
 	// geometry
 
-	var terrainGeometry = new THREE.PlaneGeometry( 250, 250, 400, 400 );
+	var terrainGeometry = new THREE.PlaneGeometry( 500, 500, 400, 400 );
 	var skyboxGeometry = new THREE.BoxGeometry( 500, 500, 500 );
 
 	// material
