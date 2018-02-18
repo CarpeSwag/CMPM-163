@@ -59,6 +59,7 @@
 	uniform vec3 color;
 	uniform float uTime;
 	uniform float uStartTime;
+	uniform sampler2D alphaMask;
 	
 	varying vec3 vColor;
 	varying float vSeed;
@@ -157,11 +158,25 @@
 	
 	void main() {
 		float time = uTime - uStartTime;
-		float scale = 2.5;
-		float noise = 1.0 - snoise(vec3(gl_PointCoord.x * scale, (gl_PointCoord.y + time) * scale, vSeed));
+		float scale = 5.0;
+		float noise = snoise(vec3(gl_PointCoord.x * scale, (gl_PointCoord.y + time) * scale, vSeed));
+		
+		float y = 1.0 - gl_PointCoord.y;
+		
+		float alpha = 1.0;
+		float gradient = (gl_PointCoord.y * 2.0) - 1.0;
+		if (noise < gradient + 0.5 || y < 0.25) {
+			alpha = 1.0;
+		} else {
+			alpha = 0.0;
+		}
+		float x = gl_PointCoord.x + y * 0.35 * sin(uTime * 3.0 + y);
+		float mask = texture2D( alphaMask, vec2(x, y) ).a;
+		
+		float green = gradient * noise - (gradient - 0.5);
 
-		gl_FragColor = vec4(color * vColor, 1.0) * noise;
-		//gl_FragColor = vec4( color * vColor, 1.0 );
+		gl_FragColor = vec4(color * vColor, alpha * mask);
+		gl_FragColor.g = green;
 	}
 	</script>
 	

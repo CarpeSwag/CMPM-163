@@ -54,20 +54,27 @@ function init() {
 		seeds[i] = Math.floor(Math.random() * 512);
 	}
 
+	// Geometries
+	
 	var geometry = new THREE.BufferGeometry();
 	geometry.addAttribute( 'position', new THREE.BufferAttribute( positions, 3 ) );
 	geometry.addAttribute( 'customColor', new THREE.BufferAttribute( colors, 3 ) );
 	geometry.addAttribute( 'size', new THREE.BufferAttribute( sizes, 1 ) );
 	geometry.addAttribute( 'seed', new THREE.BufferAttribute( seeds, 1 ) );
 
-	//
+	// Textures
+	
+	var textureMask = new THREE.TextureLoader().load( "res/mask.png" );
+	
+	// Materials
 
 	material = new THREE.ShaderMaterial( {
 		uniforms: {
 			uStartTime: { value: time },
 			uTime:      { value: time },
 			amplitude:  { value: 1.0 },
-			color:      { value: new THREE.Color( 0xffffff ) }
+			color:      { value: new THREE.Color( 0xffffff ) },
+			alphaMask:   { value: textureMask }
 		},
 		vertexShader:   document.getElementById( 'particle-vs' ).textContent,
 		fragmentShader: document.getElementById( 'particle-fs' ).textContent,
@@ -124,7 +131,7 @@ function render() {
 	var attributes = geometry.attributes;
 
 	for ( var i = 0; i < attributes.size.array.length; i++ ) {
-		attributes.size.array[ i ] = 20 + 6 * Math.sin( 0.1 * i + time );
+		//attributes.size.array[ i ] = 20 + 6 * Math.sin( 0.1 * i + time );
 	}
 
 	attributes.size.needsUpdate = true;
