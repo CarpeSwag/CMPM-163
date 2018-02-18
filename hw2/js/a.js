@@ -3,17 +3,25 @@ var container;
 var camera, scene, renderer;
 var terrainVS, terrainFS;
 var skyboxVS, skyboxFS;
-var textureHeightMap, textureLow, textureMed, textureHigh;
+var waterVS, waterFS;
+var textureHeightMap, textureLow, textureMed, textureHigh,
+	textureWaterNoise, textureWater;
 var renderCounter = 0;
 var FRAMES_TIL_RENDER = 30;
+var WATER_RERENDER = 10;
+var waterCounter = 0;
 var seed;
 // Values that can be adjusted with the GUI
 var gui, opt;
 var lastOpt;
 
 function init() {
+	var time = Math.floor(performance.now());
+	
 	terrainVS = document.getElementById( 'terrain-vs' ).textContent;
 	terrainFS = document.getElementById( 'terrain-fs' ).textContent;
+	waterVS = document.getElementById( 'water-vs' ).textContent;
+	waterFS = document.getElementById( 'water-fs' ).textContent;
 	skyboxVS = document.getElementById( 'skybox-vs' ).textContent;
 	skyboxFS = document.getElementById( 'skybox-fs' ).textContent;
 	
@@ -27,7 +35,7 @@ function init() {
 		heightUpperLimit: 256,
 		displaceAmount: 50,
 		displaceExponent: 1.0,
-		waterHeight: 0,
+		waterHeight: 5
 	};
 	lastOpt = Object.assign({}, opt);
 	
@@ -38,15 +46,17 @@ function init() {
 	gui.add(opt, "heightUpperLimit", 0, 256, 1.0);
 	gui.add(opt, "displaceAmount", 25, 100, 1.0);
 	gui.add(opt, "displaceExponent", 0.1, 10, 0.1);
-	gui.add(opt, "waterHeight", 0, 5);
+	gui.add(opt, "waterHeight", 0, 50);
 	
 	// Set up initial map creation
 	textureHeightMap = new THREE.Texture(createHeightMapCanvas('heightmap-canvas'));
-	textureLow = new THREE.TextureLoader().load( 'res/low.jpg' );
-	textureMed = new THREE.TextureLoader().load( 'res/med.jpg' );
-	textureHigh = new THREE.TextureLoader().load( 'res/high.jpg' );
+	textureLow = new THREE.TextureLoader().load( 'res/low.jpg');
+	textureMed = new THREE.TextureLoader().load( 'res/med.jpg');
+	textureWaterNoise = new THREE.Texture(createWaterCanvas('water-canvas', time));
+	textureWater = new THREE.TextureLoader().load( 'res/water.jpg');
 	
 	textureHeightMap.needsUpdate = true;
+	textureWaterNoise.needsUpdate = true;
 	
 	container = document.getElementById( 'container' );
 
@@ -64,6 +74,7 @@ function init() {
 	// geometry
 
 	var terrainGeometry = new THREE.PlaneGeometry( 500, 500, 400, 400 );
+	var waterGeometry = new THREE.PlaneGeometry( 500, 500, 100, 100 );
 	var skyboxGeometry = new THREE.BoxGeometry( 500, 500, 500 );
 
 	// material
@@ -73,14 +84,24 @@ function init() {
 		displaceExpt: { type: "f", value: opt.displaceExponent },
 		tPic: { type: "t", value: textureHeightMap },
 		tLow: { type: "t", value: textureLow },
-		tMed: { type: "t", value: textureMed },
-		tHigh: { type: "t", value: textureHigh },
+		tMed: { type: "t", value: textureMed }
 	};
 
 	var terrainMaterial = new THREE.RawShaderMaterial( {
 		uniforms: terrainUniforms,
 		vertexShader: terrainVS,
 		fragmentShader: terrainFS
+	} );
+	
+	var waterUniforms =  {
+		tPic: { type: "t", value: textureWaterNoise },
+		tWater: { type: "t", value: textureWater }
+	};
+
+	var waterMaterial = new THREE.RawShaderMaterial( {
+		uniforms: waterUniforms,
+		vertexShader: waterVS,
+		fragmentShader: waterFS
 	} );
 	
 	
@@ -111,6 +132,12 @@ function init() {
 	terrainMesh.rotateX(-Math.PI/2);
 	terrainMesh.position.y = -100;
 	scene.add( terrainMesh );
+	
+	var waterMesh = new THREE.Mesh( waterGeometry, waterMaterial );
+	waterMesh.material.side = THREE.DoubleSide;
+	waterMesh.rotateX(-Math.PI/2);
+	waterMesh.position.y = -100 + opt.waterHeight;
+	scene.add( waterMesh );
 	
 	var skyboxMesh = new THREE.Mesh( skyboxGeometry, skyboxMaterial );
 	scene.add( skyboxMesh );
@@ -162,6 +189,41 @@ function createHeightMapCanvas(eleId) {
 	return canvas;
 }
 
+function createWaterCanvas(eleId, time) {
+	var canvas = document.getElementById(eleId);
+	var size = 64;
+	var perlinFactor = 10;
+	var height = width = size;
+	canvas.width  = width;
+	canvas.height = height;
+	
+	var ctx = canvas.getContext('2d');
+	
+	ctx.colorPixel = function(x, y, color) {
+		ctx.fillStyle = color;
+		ctx.fillRect(x, y, 1, 1);
+	}
+	
+	ctx.perlinPixel = function(x, y) {
+		var c = Math.floor(Math.abs(noise.perlin3(x / perlinFactor,
+			y / perlinFactor, time / 5000) * 256));
+		this.colorPixel(x,y,'rgb('+c+','+c+','+c+')');
+	}
+	
+	// Cover canvas
+	ctx.fillStyle='black';
+	ctx.fillRect(0, 0, size, size);
+	
+	// Draw noise
+	for (var i = 0; i < size; ++i) {
+		for (var j = 0; j < size; ++j) {
+			ctx.perlinPixel(j, i);
+			ctx.perlinPixel(j+1, i+1);
+		}
+	}
+	return canvas;
+}
+
 function onWindowResize( event ) {
 	camera.aspect = window.innerWidth / window.innerHeight;
 	camera.updateProjectionMatrix();
@@ -176,8 +238,9 @@ function animate() {
 }
 
 function render() {
-	var time = performance.now();
+	var time = Math.floor(performance.now());
 	var terrain = scene.children[0];
+	var water = scene.children[1];
 	
 	var changed = false;
 	var keys = Object.keys(opt);
@@ -188,11 +251,11 @@ function render() {
 		}
 	}
 	
+	// Update if gui changed
 	if (changed) {
 		renderCounter = FRAMES_TIL_RENDER;
 		lastOpt = Object.assign({}, opt);
 	}
-	
 	if (renderCounter-- == 0) {
 		textureHeightMap = new THREE.Texture(createHeightMapCanvas('heightmap-canvas'));
 		textureHeightMap.needsUpdate = true;
@@ -200,7 +263,14 @@ function render() {
 		terrain.material.uniforms.displaceAmt.value = opt.displaceAmount;
 		terrain.material.uniforms.displaceExpt.value = opt.displaceExponent;
 		terrain.material.uniforms.tPic.value = textureHeightMap;
+		water.position.y = -100 + opt.waterHeight;
 	}
+	
+	// Update water height map
+	textureWaterNoise = new THREE.Texture(createWaterCanvas('water-canvas', time));
+	textureWaterNoise.needsUpdate = true;
+	water.material.uniforms.tPic.value = textureWaterNoise;
+
 
 	renderer.render( scene, camera );
 }

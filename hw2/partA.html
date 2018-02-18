@@ -9,7 +9,7 @@
 		overflow: hidden;
 	}
 	
-	#heightmap-canvas {
+	#heightmap-canvas, #water-canvas {
 		display: none;
 	}
 	
@@ -30,8 +30,9 @@
 	</style>
 </head>
 <body>
-	<div id="container"></div>
 	<canvas id='heightmap-canvas'></canvas>
+	<canvas id='water-canvas'></canvas>
+	<div id="container"></div>
 	
 	<script src="js/three.min.js"></script>
 	<script src="js/OrbitControls.js"></script>
@@ -70,7 +71,7 @@
 	<script id="terrain-fs" type="x-shader/x-fragment">
     precision mediump float;
 
-    uniform sampler2D tLow, tMed, tHigh;
+    uniform sampler2D tLow, tMed;
 
     varying vec2 vUv;
     varying float vDisplace;
@@ -79,7 +80,6 @@
     void main() {
 		vec4 low = texture2D(tLow, vUv);
 		vec4 med = texture2D(tMed, vUv);
-		vec4 high = texture2D(tHigh, vUv);
 
 		float zOffset = vDisplace / displaceAmt;
 
@@ -87,6 +87,45 @@
 
 
 		gl_FragColor = vec4( mix1.rgb, 1.0 );        
+	}
+	</script>
+	
+	<!-- Water Shader -->
+	<script id="water-vs" type="x-shader/x-vertex">
+    precision mediump float;
+	
+	uniform mat4 modelMatrix;
+	uniform mat4 viewMatrix;
+    uniform mat4 projectionMatrix;
+	uniform sampler2D tPic;
+
+    attribute vec3 position;
+	attribute vec2 uv;
+	attribute vec3 normal;
+	
+	varying vec2 vUv;
+
+	void main() {
+		vUv = uv;
+		
+		vec4 clr = texture2D(tPic, uv);
+		float displace = clr.r * 5.0; //displacement;
+        vec3 newPosition = (position.xyz + normal.xyz * displace).xyz;
+      
+       	gl_Position = projectionMatrix  * viewMatrix * modelMatrix  * vec4( newPosition, 1.0 );
+    }
+	</script>
+	<script id="water-fs" type="x-shader/x-fragment">
+    precision mediump float;
+
+    uniform sampler2D tWater;
+
+    varying vec2 vUv;
+
+    void main() {
+		vec4 water = texture2D(tWater, vUv);
+
+		gl_FragColor = vec4( water.rgb, 1.0 );        
 	}
 	</script>
 	
