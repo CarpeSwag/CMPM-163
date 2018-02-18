@@ -2,13 +2,16 @@
 var container;
 var camera, scene, renderer;
 var terrainVS, terrainFS;
+var skyboxVS, skyboxFS;
 var texture1, texture2, texture3, texture4;
 var seed;
 var size, cubeSize, perlinFactor, heightUpper, heightLower;
 
 function init() {
-	terrainVS = document.getElementById( 'terrainVS' ).textContent;
-	terrainFS = document.getElementById( 'terrainFS' ).textContent;
+	terrainVS = document.getElementById( 'terrain-vs' ).textContent;
+	terrainFS = document.getElementById( 'terrain-fs' ).textContent;
+	skyboxVS = document.getElementById( 'skybox-vs' ).textContent;
+	skyboxFS = document.getElementById( 'skybox-fs' ).textContent;
 	
 	seed = Math.ceil(Math.random() * 65536);
 	noise.seed(seed);
@@ -16,7 +19,7 @@ function init() {
 	// Set up initial map creation
 	size = Math.pow(2, 8);
 	cubeSize = 4;
-	perlinFactor = size / 10;
+	perlinFactor = size / 20;
 	heightUpper = 256;
 	heightLower = 0;
 	
@@ -30,22 +33,25 @@ function init() {
 	
 	container = document.getElementById( 'container' );
 
-	camera = new THREE.PerspectiveCamera( 50.0, window.innerWidth / window.innerHeight, 0.1, 50 );
-
+	camera = new THREE.PerspectiveCamera( 50.0, window.innerWidth / window.innerHeight, 0.1, 100 );
+	camera.position.x = 5;
+	camera.position.y = 5;
+	camera.position.z = 0;
+	
 	//adds a default mouse listener to control the camera rotation and zoom
 	var controls = new THREE.OrbitControls( camera );
-	camera.position.z = 5;
 	controls.update();
 
 	scene = new THREE.Scene();
 
 	// geometry
 
-	var geometry1 = new THREE.PlaneGeometry( 20, 20, 400, 300 );
+	var terrainGeometry = new THREE.PlaneGeometry( 10, 10, 400, 400 );
+	var skyboxGeometry = new THREE.BoxGeometry( 50, 50, 50 );
 
 	// material
 
-	var uniforms1 =  {
+	var terrainUniforms =  {
 		displaceAmt: { type: "f", value: 0.0 },
 		tPic: { type: "t", value: texture1  },
 		tGrass: { type: "t", value: texture2  },
@@ -53,17 +59,43 @@ function init() {
 		tHill: { type: "t", value: texture4  },
 	};
 
-	var material1 = new THREE.RawShaderMaterial( {
-		uniforms: uniforms1,
+	var terrainMaterial = new THREE.RawShaderMaterial( {
+		uniforms: terrainUniforms,
 		vertexShader: terrainVS,
 		fragmentShader: terrainFS
-
 	} );
+	
+	
+	var cubeMap = new THREE.CubeTextureLoader()
+		.setPath("res/skybox/")
+		.load( [
+			'posx.jpg',
+			'negx.jpg',
+			'posy.jpg',
+			'negy.jpg',
+			'posz.jpg',
+			'negz.jpg'
+		]);
+	var skyboxUniforms = { "tCube": { type: "t", value: cubeMap } };
+	
+	var skyboxMaterial = new THREE.RawShaderMaterial({
+		uniforms: skyboxUniforms,
+		vertexShader: skyboxVS,
+		fragmentShader: skyboxFS
+	});
+	skyboxMaterial.depthWrite = false;
+	skyboxMaterial.side = THREE.BackSide;
 
-	var mesh1 = new THREE.Mesh( geometry1, material1 );
-	mesh1.material.side = THREE.DoubleSide;
-	mesh1.rotateX(-Math.PI/3);
-	scene.add( mesh1 );
+	// Mesh
+	
+	var terrainMesh = new THREE.Mesh( terrainGeometry, terrainMaterial );
+	terrainMesh.material.side = THREE.DoubleSide;
+	terrainMesh.rotateX(-Math.PI/2);
+	terrainMesh.position.y = -1;
+	scene.add( terrainMesh );
+	
+	var skyboxMesh = new THREE.Mesh( skyboxGeometry, skyboxMaterial );
+	scene.add( skyboxMesh );
 
 	renderer = new THREE.WebGLRenderer();
 	renderer.setClearColor( 0x999999 );

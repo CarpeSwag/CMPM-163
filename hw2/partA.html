@@ -12,8 +12,9 @@
 	<script src="js/three.min.js"></script>
 	<script src="js/OrbitControls.js"></script>
 	<script src="js/perlin.js"></script>
-    <script id="terrainVS" type="x-shader/x-vertex">
-
+	
+	<!-- Terrain Shaders -->
+    <script id="terrain-vs" type="x-shader/x-vertex">
 	uniform mat4 modelMatrix;
 	uniform mat4 viewMatrix;
     uniform mat4 projectionMatrix;
@@ -40,36 +41,58 @@
        	gl_Position = projectionMatrix  * viewMatrix * modelMatrix  * vec4( newPosition, 1.0 );
     }
 	</script>
+	<script id="terrain-fs" type="x-shader/x-fragment">
+    precision mediump float;
 
-	<script id="terrainFS" type="x-shader/x-fragment">
+    uniform sampler2D tGrass, tSnow, tHill;
 
-      precision mediump float;
+    varying vec2 vUv;
+    varying float vDisplace; 
 
-      uniform sampler2D tGrass, tSnow, tHill;
+    void main() {
+		vec4 grass = texture2D(tGrass, vUv);
+		vec4 snow = texture2D(tSnow, vUv);
+		vec4 hill = texture2D(tHill, vUv);
 
+		float zOffset = vDisplace;
 
-      varying vec2 vUv;
-      varying float vDisplace; 
-
-
-      void main() {
-
-	vec4 grass = texture2D(tGrass, vUv);
-	vec4 snow = texture2D(tSnow, vUv);
-	vec4 hill = texture2D(tHill, vUv);
-
-	float zOffset = vDisplace;
-
-	vec4 mix1 = mix(grass, hill, min(1.0,zOffset*8.0));
-	vec4 mix2 = max(vec4(1.0), mix(hill, snow, zOffset) * 1.5);
-	vec4 mix3 = mix(mix1, mix2, zOffset);
+		vec4 mix1 = mix(grass, hill, min(1.0,zOffset*8.0));
+		vec4 mix2 = max(vec4(1.0), mix(hill, snow, zOffset) * 1.5);
+		vec4 mix3 = mix(mix1, mix2, zOffset);
 
 
-	gl_FragColor = vec4( mix3.rgb, 1.0 );        
-
-   }
-
+		gl_FragColor = vec4( mix3.rgb, 1.0 );        
+	}
 	</script>
+	
+	<!-- Skybox Shaders -->
+	<script id="skybox-vs" type="x-shader/x-vertex">
+	uniform mat4 modelMatrix;
+	uniform mat4 viewMatrix;
+    uniform mat4 projectionMatrix;
+
+    attribute vec3 position; 
+
+	varying vec3 vWorldPosition;
+	
+	void main() {
+		vec4 worldPosition = modelMatrix * vec4( position, 1.0 );
+		vWorldPosition = worldPosition.xyz;
+
+		vec4 p = viewMatrix * modelMatrix * vec4(position, 1.0);
+		gl_Position = projectionMatrix * p;	
+    }
+    </script>
+    <script id="skybox-fs" type="x-shader/x-fragment">
+	precision mediump float;
+	
+	uniform samplerCube tCube;
+	varying vec3 vWorldPosition;
+
+	void main() {
+		gl_FragColor = textureCube( tCube, vec3(  vWorldPosition ) );
+	}
+    </script>
 	
 	<script src="js/a.js"></script>
 </body>
