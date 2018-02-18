@@ -29,7 +29,7 @@ function init() {
 	gui = new dat.GUI( { width: 350 } )
 	opt = {
 		seed: Math.ceil(Math.random() * 65536),
-		size: 8,
+		heightMapSize: 8,
 		terrainRoughness: 2,
 		perlinSmoothing: 13,
 		heightUpperLimit: 256,
@@ -41,7 +41,7 @@ function init() {
 	lastOpt = Object.assign({}, opt);
 	
 	gui.add(opt, "seed", 1, 65536, 1.0);
-	gui.add(opt, "size", 1, 10, 1.0);
+	gui.add(opt, "heightMapSize", 1, 10, 1.0);
 	gui.add(opt, "terrainRoughness", 0, 5, 1.0);
 	gui.add(opt, "perlinSmoothing", 1, 50, 1.0);
 	gui.add(opt, "heightUpperLimit", 0, 256, 1.0);
