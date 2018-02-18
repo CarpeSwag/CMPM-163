@@ -1,11 +1,10 @@
 var renderer, scene, camera;
 var boxOfPoints;
 var WIDTH, HEIGHT;
-
-var tex1 = new THREE.TextureLoader().load( "res/spark.png" );
-
+var material;
 
 function init() {
+	var time = Math.floor(performance.now()) * 0.001;
 	WIDTH = window.innerWidth;
 	HEIGHT = window.innerHeight;
 	
@@ -20,12 +19,13 @@ function init() {
 
 	//var amount = 10000;
 	//var radius = 25;
-	var amount = 2000;
+	var amount = 20;
 	var radius = 20;
 
 	var positions = new Float32Array( amount * 3 );
 	var colors = new Float32Array( amount * 3 );
 	var sizes = new Float32Array( amount );
+	var seeds = new Float32Array( amount );
 
 	var vertex = new THREE.Vector3();
 	var color = new THREE.Color( 0xffffff );
@@ -50,22 +50,24 @@ function init() {
 
 		color.toArray( colors, i * 3 );
 
-		sizes[ i ] = 20;
-
+		sizes[i] = 20;
+		seeds[i] = Math.floor(Math.random() * 512);
 	}
 
 	var geometry = new THREE.BufferGeometry();
 	geometry.addAttribute( 'position', new THREE.BufferAttribute( positions, 3 ) );
 	geometry.addAttribute( 'customColor', new THREE.BufferAttribute( colors, 3 ) );
 	geometry.addAttribute( 'size', new THREE.BufferAttribute( sizes, 1 ) );
+	geometry.addAttribute( 'seed', new THREE.BufferAttribute( seeds, 1 ) );
 
 	//
 
-	var material = new THREE.ShaderMaterial( {
+	material = new THREE.ShaderMaterial( {
 		uniforms: {
-			amplitude: { value: 1.0 },
-			color:     { value: new THREE.Color( 0xffffff ) },
-			texture:   { value: tex1 }
+			uStartTime: { value: time },
+			uTime:      { value: time },
+			amplitude:  { value: 1.0 },
+			color:      { value: new THREE.Color( 0xffffff ) }
 		},
 		vertexShader:   document.getElementById( 'particle-vs' ).textContent,
 		fragmentShader: document.getElementById( 'particle-fs' ).textContent,
@@ -114,7 +116,6 @@ function animate() {
 }
 
 function render() {
-
 	var time = Date.now() * 0.005;
 
 	boxOfPoints.rotation.z = 0.01 * time;
@@ -123,12 +124,13 @@ function render() {
 	var attributes = geometry.attributes;
 
 	for ( var i = 0; i < attributes.size.array.length; i++ ) {
-
-		attributes.size.array[ i ] = 14 + 13 * Math.sin( 0.1 * i + time );
-
+		attributes.size.array[ i ] = 20 + 6 * Math.sin( 0.1 * i + time );
 	}
 
 	attributes.size.needsUpdate = true;
+	
+	var uTime = Math.floor(performance.now()) * 0.001;
+	material.uniforms.uTime.value = uTime;
 
 	renderer.render( scene, camera );
 
