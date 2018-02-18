@@ -30,23 +30,25 @@ function init() {
 	opt = {
 		seed: Math.ceil(Math.random() * 65536),
 		size: 8,
-		cubeSize: 2,
-		perlinFactor: 13,
+		terrainRoughness: 2,
+		perlinSmoothing: 13,
 		heightUpperLimit: 256,
 		displaceAmount: 50,
 		displaceExponent: 1.0,
-		waterHeight: 5
+		waterHeight: 5,
+		waterRoughness: 5.0
 	};
 	lastOpt = Object.assign({}, opt);
 	
 	gui.add(opt, "seed", 1, 65536, 1.0);
 	gui.add(opt, "size", 1, 10, 1.0);
-	gui.add(opt, "cubeSize", 0, 5, 1.0);
-	gui.add(opt, "perlinFactor", 1, 50, 1.0);
+	gui.add(opt, "terrainRoughness", 0, 5, 1.0);
+	gui.add(opt, "perlinSmoothing", 1, 50, 1.0);
 	gui.add(opt, "heightUpperLimit", 0, 256, 1.0);
 	gui.add(opt, "displaceAmount", 25, 100, 1.0);
 	gui.add(opt, "displaceExponent", 0.1, 10, 0.1);
-	gui.add(opt, "waterHeight", 0, 50);
+	gui.add(opt, "waterHeight", 0, 50, 1.0);
+	gui.add(opt, "waterRoughness", 0.5, 25, 0.5);
 	
 	// Set up initial map creation
 	textureHeightMap = new THREE.Texture(createHeightMapCanvas('heightmap-canvas'));
@@ -60,7 +62,7 @@ function init() {
 	
 	container = document.getElementById( 'container' );
 
-	camera = new THREE.PerspectiveCamera( 50.0, window.innerWidth / window.innerHeight, 0.1, 1000 );
+	camera = new THREE.PerspectiveCamera( 50.0, window.innerWidth / window.innerHeight, 0.1, 1500 );
 	camera.position.x = 50;
 	camera.position.y = 50;
 	camera.position.z = 0;
@@ -94,6 +96,7 @@ function init() {
 	} );
 	
 	var waterUniforms =  {
+		displaceAmt: { type: "f", value: opt.waterRoughness },
 		tPic: { type: "t", value: textureWaterNoise },
 		tWater: { type: "t", value: textureWater }
 	};
@@ -154,7 +157,7 @@ function init() {
 function createHeightMapCanvas(eleId) {
 	var canvas = document.getElementById(eleId);
 	var size = Math.pow(2, opt.size);
-	var cubeSize = Math.pow(2, opt.cubeSize);
+	var cubeSize = Math.pow(2, opt.terrainRoughness);
 	var height = width = size;
 	canvas.width  = width;
 	canvas.height = height;
@@ -167,8 +170,8 @@ function createHeightMapCanvas(eleId) {
 	}
 	
 	ctx.perlinChunk = function(x, y) {
-		var c = Math.floor(Math.abs(noise.perlin2(x / opt.perlinFactor,
-			y / opt.perlinFactor) * opt.heightUpperLimit));
+		var c = Math.floor(Math.abs(noise.perlin2(x / opt.perlinSmoothing,
+			y / opt.perlinSmoothing) * opt.heightUpperLimit));
 		this.colorChunk(x,y,'rgb('+c+','+c+','+c+')');
 	}
 	
@@ -264,6 +267,7 @@ function render() {
 		terrain.material.uniforms.displaceExpt.value = opt.displaceExponent;
 		terrain.material.uniforms.tPic.value = textureHeightMap;
 		water.position.y = -100 + opt.waterHeight;
+		water.material.uniforms.displaceAmt.value = opt.waterRoughness;
 	}
 	
 	// Update water height map

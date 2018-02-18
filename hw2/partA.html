@@ -98,6 +98,7 @@
 	uniform mat4 viewMatrix;
     uniform mat4 projectionMatrix;
 	uniform sampler2D tPic;
+	uniform float displaceAmt;
 
     attribute vec3 position;
 	attribute vec2 uv;
@@ -109,7 +110,7 @@
 		vUv = uv;
 		
 		vec4 clr = texture2D(tPic, uv);
-		float displace = clr.r * 5.0; //displacement;
+		float displace = clr.r * displaceAmt; //displacement;
         vec3 newPosition = (position.xyz + normal.xyz * displace).xyz;
       
        	gl_Position = projectionMatrix  * viewMatrix * modelMatrix  * vec4( newPosition, 1.0 );
