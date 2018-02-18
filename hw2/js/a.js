@@ -8,8 +8,6 @@ var textureHeightMap, textureLow, textureMed, textureHigh,
 	textureWaterNoise;
 var renderCounter = 0;
 var FRAMES_TIL_RENDER = 30;
-var WATER_RERENDER = 10;
-var waterCounter = 0;
 var seed;
 // Values that can be adjusted with the GUI
 var gui, opt;
@@ -26,7 +24,7 @@ function init() {
 	skyboxFS = document.getElementById( 'skybox-fs' ).textContent;
 	
 	// Setup gui
-	gui = new dat.GUI( { width: 350 } )
+	gui = new dat.GUI( { width: 350 } );
 	opt = {
 		seed: Math.ceil(Math.random() * 65536),
 		heightMapSize: 8,

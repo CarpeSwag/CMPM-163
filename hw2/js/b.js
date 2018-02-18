@@ -2,6 +2,9 @@ var renderer, scene, camera;
 var boxOfPoints;
 var WIDTH, HEIGHT;
 var material;
+var renderCounter = 0;
+var FRAMES_TIL_RENDER = 30;
+var gui, opt, lastOpt;
 
 function init() {
 	var time = Math.floor(performance.now()) * 0.001;
@@ -12,13 +15,65 @@ function init() {
 	camera.position.z = 300;
 	var controls = new THREE.OrbitControls( camera );
 
-
 	scene = new THREE.Scene();
 
-	//initialize point attributes
+	// Setup gui
+	gui = new dat.GUI( { width: 350 } )
+	opt = {
+		spawnerRadius: 50,
+		amountOfParticles: 2000,
+		particleSizeVariance: 20,
+		particleMinSize: 10
+	};
+	lastOpt = Object.assign({}, opt);
+	
+	gui.add(opt, "spawnerRadius", 1, 1000, 1.0);
+	gui.add(opt, "amountOfParticles", 1, 10000, 1.0);
+	gui.add(opt, "particleSizeVariance", 0, 400, 1.0);
+	gui.add(opt, "particleMinSize", 1, 100, 1.0);
+	
+	// Textures
+	
+	var textureMask = new THREE.TextureLoader().load( "res/mask.png" );
 
-	var amount = 2000;
-	var radius = 50;
+	// Materials 
+	
+	material = new THREE.ShaderMaterial( {
+		uniforms: {
+			uStartTime: { value: time },
+			uTime:      { value: time },
+			color:      { value: new THREE.Color( 0xffffff ) },
+			alphaMask:   { value: textureMask }
+		},
+		vertexShader:   document.getElementById( 'particle-vs' ).textContent,
+		fragmentShader: document.getElementById( 'particle-fs' ).textContent,
+
+		blending:       THREE.AdditiveBlending,
+		depthTest:      false,
+		transparent:    true
+	});
+	
+	createBoxOfPoints();
+
+	renderer = new THREE.WebGLRenderer();
+	renderer.setPixelRatio( window.devicePixelRatio );
+	renderer.setSize( WIDTH, HEIGHT );
+
+	var container = document.getElementById( 'container' );
+	container.appendChild( renderer.domElement );
+
+
+	window.addEventListener( 'resize', onWindowResize, false );
+
+}
+
+function createBoxOfPoints() {
+	if (boxOfPoints != null) {
+		scene.remove(boxOfPoints);
+	}
+	
+	var amount = opt.amountOfParticles;
+	var radius = opt.spawnerRadius;
 
 	var positions = new Float32Array( amount * 3 );
 	var colors = new Float32Array( amount * 3 );
@@ -29,7 +84,6 @@ function init() {
 	var color = new THREE.Color( 0xffffff );
 
 	for ( var i = 0; i < amount; i ++ ) {
-
 		vertex.x = ( Math.random() * 2 - 1 ) * radius;
 		vertex.y = ( Math.random() * 2 - 1 ) * radius;
 		vertex.z = ( Math.random() * 2 - 1 ) * radius;
@@ -46,7 +100,7 @@ function init() {
 
 		color.toArray( colors, i * 3 );
 
-		sizes[i] = Math.floor(Math.random() * 20) + 10;
+		sizes[i] = Math.floor(Math.random() * opt.particleSizeVariance) + opt.particleMinSize;
 		seeds[i] = Math.floor(Math.random() * 512);
 	}
 
@@ -57,48 +111,11 @@ function init() {
 	geometry.addAttribute( 'customColor', new THREE.BufferAttribute( colors, 3 ) );
 	geometry.addAttribute( 'size', new THREE.BufferAttribute( sizes, 1 ) );
 	geometry.addAttribute( 'seed', new THREE.BufferAttribute( seeds, 1 ) );
-
-	// Textures
 	
-	var textureMask = new THREE.TextureLoader().load( "res/mask.png" );
-	
-	// Materials
-
-	material = new THREE.ShaderMaterial( {
-		uniforms: {
-			uStartTime: { value: time },
-			uTime:      { value: time },
-			amplitude:  { value: 1.0 },
-			color:      { value: new THREE.Color( 0xffffff ) },
-			alphaMask:   { value: textureMask }
-		},
-		vertexShader:   document.getElementById( 'particle-vs' ).textContent,
-		fragmentShader: document.getElementById( 'particle-fs' ).textContent,
-
-		blending:       THREE.AdditiveBlending,
-		depthTest:      false,
-		transparent:    true
-
-	});
-
-	//
+	// Add it to the scene
 
 	boxOfPoints = new THREE.Points( geometry, material );
 	scene.add( boxOfPoints );
-
-	//
-
-	renderer = new THREE.WebGLRenderer();
-	renderer.setPixelRatio( window.devicePixelRatio );
-	renderer.setSize( WIDTH, HEIGHT );
-
-	var container = document.getElementById( 'container' );
-	container.appendChild( renderer.domElement );
-
-	//
-
-	window.addEventListener( 'resize', onWindowResize, false );
-
 }
 
 function onWindowResize() {
@@ -110,17 +127,27 @@ function onWindowResize() {
 
 }
 
-function animate() {
-
-	requestAnimationFrame( animate );
-
-	render();
-
-}
-
 function render() {
 	var time = Date.now() * 0.005;
 
+	var changed = false;
+	var keys = Object.keys(opt);
+	for (var i = 0; i < keys.length; ++i) {
+		if (opt[keys[i]] != lastOpt[keys[i]]) {
+			changed = true;
+			break;
+		}
+	}
+	
+	// Update if gui changed
+	if (changed) {
+		renderCounter = FRAMES_TIL_RENDER;
+		lastOpt = Object.assign({}, opt);
+	}
+	if (renderCounter-- == 0) {
+		createBoxOfPoints();
+	}
+	
 	boxOfPoints.rotation.z = 0.01 * time;
 
 	var geometry = boxOfPoints.geometry;
@@ -136,7 +163,11 @@ function render() {
 	material.uniforms.uTime.value = uTime;
 
 	renderer.render( scene, camera );
+}
 
+function animate() {
+	requestAnimationFrame( animate );
+	render();
 }
 
 window.addEventListener('DOMContentLoaded', function() {
