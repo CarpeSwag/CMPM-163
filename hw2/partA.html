@@ -3,7 +3,31 @@
 <head>
 	<title>HW2 - Part A</title>
 	<meta charset="utf-8">
-	<style>body {margin: 0px; overflow: hidden;} #heightmap-canvas {display: none;}</style>
+	<style>
+	body {
+		margin: 0px;
+		overflow: hidden;
+	}
+	
+	#heightmap-canvas {
+		display: none;
+	}
+	
+	#info {
+		position: absolute;
+		top: 0px;
+		width: 100%;
+		padding: 5px;
+		font-family:Monospace;
+		font-size:13px;
+		text-align:center;
+		color: #ffffff;
+	}
+
+	a {
+		color: #ffffff;
+	}
+	</style>
 </head>
 <body>
 	<div id="container"></div>
@@ -11,6 +35,7 @@
 	
 	<script src="js/three.min.js"></script>
 	<script src="js/OrbitControls.js"></script>
+	<script src="js/dat.gui.min.js"></script>
 	<script src="js/perlin.js"></script>
 	
 	<!-- Terrain Shaders -->

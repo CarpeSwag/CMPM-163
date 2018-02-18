@@ -4,10 +4,12 @@ var camera, scene, renderer;
 var terrainVS, terrainFS;
 var skyboxVS, skyboxFS;
 var textureHeightMap, textureLow, textureMed, textureHigh;
+var renderCounter = 0;
+var FRAMES_TIL_RENDER = 30;
 var seed;
 // Values that can be adjusted with the GUI
-var size, cubeSize, perlinFactor, heightUpper, heightLower,
-	displaceAmt, displaceExpt, waterHeight;
+var gui, opt;
+var lastOpt;
 
 function init() {
 	terrainVS = document.getElementById( 'terrain-vs' ).textContent;
@@ -15,21 +17,31 @@ function init() {
 	skyboxVS = document.getElementById( 'skybox-vs' ).textContent;
 	skyboxFS = document.getElementById( 'skybox-fs' ).textContent;
 	
-	seed = Math.ceil(Math.random() * 65536);
-	noise.seed(seed);
+	// Setup gui
+	gui = new dat.GUI( { width: 350 } )
+	opt = {
+		seed: Math.ceil(Math.random() * 65536),
+		size: 8,
+		cubeSize: 2,
+		perlinFactor: 13,
+		heightUpperLimit: 256,
+		displaceAmount: 25,
+		displaceExponent: 1.0,
+		waterHeight: 0,
+	};
+	lastOpt = Object.assign({}, opt);
+	
+	gui.add(opt, "seed", 1, 65536, 1.0);
+	gui.add(opt, "size", 1, 10, 1.0);
+	gui.add(opt, "cubeSize", 0, 5, 1.0);
+	gui.add(opt, "perlinFactor", 1, 50, 1.0);
+	gui.add(opt, "heightUpperLimit", 0, 256, 1.0);
+	gui.add(opt, "displaceAmount", 1, 100, 1.0);
+	gui.add(opt, "displaceExponent", 0.1, 10, 0.1);
+	gui.add(opt, "waterHeight", 0, 5);
 	
 	// Set up initial map creation
-	size = Math.pow(2, 8);
-	cubeSize = 4;
-	perlinFactor = size / 20;
-	heightUpper = 256;
-	heightLower = 0;
-	displaceAmt = 25;
-	displaceExpt = 1.0;
-	waterHeight = 0;
-	
-	var canvas = createHeightMapCanvas('heightmap-canvas');
-	textureHeightMap = new THREE.Texture(canvas);
+	textureHeightMap = new THREE.Texture(createHeightMapCanvas('heightmap-canvas'));
 	textureLow = new THREE.TextureLoader().load( 'res/low.jpg' );
 	textureMed = new THREE.TextureLoader().load( 'res/med.jpg' );
 	textureHigh = new THREE.TextureLoader().load( 'res/high.jpg' );
@@ -57,8 +69,8 @@ function init() {
 	// material
 
 	var terrainUniforms =  {
-		displaceAmt: { type: "f", value: displaceAmt },
-		displaceExpt: { type: "f", value: displaceExpt },
+		displaceAmt: { type: "f", value: opt.displaceAmount },
+		displaceExpt: { type: "f", value: opt.displaceExponent },
 		tPic: { type: "t", value: textureHeightMap },
 		tLow: { type: "t", value: textureLow },
 		tMed: { type: "t", value: textureMed },
@@ -97,7 +109,7 @@ function init() {
 	var terrainMesh = new THREE.Mesh( terrainGeometry, terrainMaterial );
 	terrainMesh.material.side = THREE.DoubleSide;
 	terrainMesh.rotateX(-Math.PI/2);
-	terrainMesh.position.y = -50;
+	terrainMesh.position.y = -100;
 	scene.add( terrainMesh );
 	
 	var skyboxMesh = new THREE.Mesh( skyboxGeometry, skyboxMaterial );
@@ -114,6 +126,8 @@ function init() {
 
 function createHeightMapCanvas(eleId) {
 	var canvas = document.getElementById(eleId);
+	var size = Math.pow(2, opt.size);
+	var cubeSize = Math.pow(2, opt.cubeSize);
 	var height = width = size;
 	canvas.width  = width;
 	canvas.height = height;
@@ -126,14 +140,19 @@ function createHeightMapCanvas(eleId) {
 	}
 	
 	ctx.perlinChunk = function(x, y) {
-		var h = heightUpper - heightLower;
-		var c = Math.floor(Math.abs(noise.perlin2(x / perlinFactor, y / perlinFactor) * h)) + heightLower;
+		var c = Math.floor(Math.abs(noise.perlin2(x / opt.perlinFactor,
+			y / opt.perlinFactor) * opt.heightUpperLimit));
 		this.colorChunk(x,y,'rgb('+c+','+c+','+c+')');
 	}
 	
+	// Seed perlin noise generator
+	noise.seed(opt.seed);
+	
+	// Cover canvas
 	ctx.fillStyle='black';
 	ctx.fillRect(0, 0, size, size);
 	
+	// Draw noise
 	for (var i = 0; i < size / cubeSize; ++i) {
 		for (var j = 0; j < size / cubeSize; ++j) {
 			ctx.perlinChunk(j, i);
@@ -154,15 +173,34 @@ function onWindowResize( event ) {
 function animate() {
 	requestAnimationFrame( animate );
 	render();
-
 }
 
 function render() {
 	var time = performance.now();
-
-	var object0 = scene.children[ 0 ];
-	//object0.material.uniforms.displaceExpt.value = 1.0;
-
+	var terrain = scene.children[0];
+	
+	var changed = false;
+	var keys = Object.keys(opt);
+	for (var i = 0; i < keys.length; ++i) {
+		if (opt[keys[i]] != lastOpt[keys[i]]) {
+			changed = true;
+			break;
+		}
+	}
+	
+	if (changed) {
+		renderCounter = FRAMES_TIL_RENDER;
+		lastOpt = Object.assign({}, opt);
+	}
+	
+	if (renderCounter-- == 0) {
+		textureHeightMap = new THREE.Texture(createHeightMapCanvas('heightmap-canvas'));
+		textureHeightMap.needsUpdate = true;
+		
+		terrain.material.uniforms.displaceAmt.value = opt.displaceAmount;
+		terrain.material.uniforms.displaceExpt.value = opt.displaceExponent;
+		terrain.material.uniforms.tPic.value = textureHeightMap;
+	}
 
 	renderer.render( scene, camera );
 }
