@@ -1,11 +1,24 @@
+// Uses https://github.com/josephg/noisejs
 var container;
 var camera, scene, renderer;
 var vs, fs;
 var texture1, texture2, texture3, texture4;
+var seed;
+var size, cubeSize, perlinFactor, heightUpper, heightLower;
 
 function init() {
 	vs = document.getElementById( 'vertexShader' ).textContent;
 	fs = document.getElementById( 'fragmentShader' ).textContent;
+	
+	seed = Math.ceil(Math.random() * 65536);
+	noise.seed(seed);
+	
+	// Set up initial map creation
+	size = Math.pow(2, 8);
+	cubeSize = 4;
+	perlinFactor = size / 10;
+	heightUpper = 256;
+	heightLower = 0;
 	
 	var canvas = createHeightMapCanvas('heightmap-canvas');
 	texture1 = new THREE.Texture(canvas);
@@ -28,7 +41,7 @@ function init() {
 
 	// geometry
 
-	var geometry1 = new THREE.PlaneGeometry( 5, 5, 300, 300 );
+	var geometry1 = new THREE.PlaneGeometry( 20, 20, 400, 300 );
 
 	// material
 
@@ -63,8 +76,6 @@ function init() {
 
 function createHeightMapCanvas(eleId) {
 	var canvas = document.getElementById(eleId);
-	var size = Math.pow(2, 10);
-	var cubeSize = 16;
 	var height = width = size;
 	canvas.width  = width;
 	canvas.height = height;
@@ -76,13 +87,19 @@ function createHeightMapCanvas(eleId) {
 		ctx.fillRect(x * cubeSize, y * cubeSize, cubeSize, cubeSize);
 	}
 	
+	ctx.perlinChunk = function(x, y) {
+		var h = heightUpper - heightLower;
+		var c = Math.floor(Math.abs(noise.perlin2(x / perlinFactor, y / perlinFactor) * h)) + heightLower;
+		this.colorChunk(x,y,'rgb('+c+','+c+','+c+')');
+	}
+	
 	ctx.fillStyle='black';
 	ctx.fillRect(0, 0, size, size);
 	
-	for (var i = 0; i < size / cubeSize; i += 2) {
-		for (var j = 0; j < size / cubeSize; j += 2) {
-			ctx.colorChunk(j, i, '#333333');
-			ctx.colorChunk(j+1, i+1, '#333333');
+	for (var i = 0; i < size / cubeSize; ++i) {
+		for (var j = 0; j < size / cubeSize; ++j) {
+			ctx.perlinChunk(j, i);
+			ctx.perlinChunk(j+1, i+1);
 		}
 	}
 	return canvas;
