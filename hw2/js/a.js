@@ -1,14 +1,14 @@
 // Uses https://github.com/josephg/noisejs
 var container;
 var camera, scene, renderer;
-var vs, fs;
+var terrainVS, terrainFS;
 var texture1, texture2, texture3, texture4;
 var seed;
 var size, cubeSize, perlinFactor, heightUpper, heightLower;
 
 function init() {
-	vs = document.getElementById( 'vertexShader' ).textContent;
-	fs = document.getElementById( 'fragmentShader' ).textContent;
+	terrainVS = document.getElementById( 'terrainVS' ).textContent;
+	terrainFS = document.getElementById( 'terrainFS' ).textContent;
 	
 	seed = Math.ceil(Math.random() * 65536);
 	noise.seed(seed);
@@ -55,8 +55,8 @@ function init() {
 
 	var material1 = new THREE.RawShaderMaterial( {
 		uniforms: uniforms1,
-		vertexShader: vs,
-		fragmentShader: fs,
+		vertexShader: terrainVS,
+		fragmentShader: terrainFS
 
 	} );
 
