@@ -5,11 +5,9 @@ var terrainVS, terrainFS;
 var skyboxVS, skyboxFS;
 var waterVS, waterFS;
 var textureHeightMap, textureLow, textureMed, textureHigh,
-	textureWaterNoise, textureWater;
+	textureWaterNoise;
 var renderCounter = 0;
 var FRAMES_TIL_RENDER = 30;
-var WATER_RERENDER = 10;
-var waterCounter = 0;
 var seed;
 // Values that can be adjusted with the GUI
 var gui, opt;
@@ -26,59 +24,72 @@ function init() {
 	skyboxFS = document.getElementById( 'skybox-fs' ).textContent;
 	
 	// Setup gui
-	gui = new dat.GUI( { width: 350 } )
+	gui = new dat.GUI( { width: 350 } );
 	opt = {
 		seed: Math.ceil(Math.random() * 65536),
-		size: 8,
-		cubeSize: 2,
-		perlinFactor: 13,
+		heightMapSize: 8,
+		terrainRoughness: 2,
+		perlinSmoothing: 13,
 		heightUpperLimit: 256,
 		displaceAmount: 50,
 		displaceExponent: 1.0,
-		waterHeight: 5
+		waterHeight: 5,
+		waterRoughness: 5.0
 	};
 	lastOpt = Object.assign({}, opt);
 	
 	gui.add(opt, "seed", 1, 65536, 1.0);
-	gui.add(opt, "size", 1, 10, 1.0);
-	gui.add(opt, "cubeSize", 0, 5, 1.0);
-	gui.add(opt, "perlinFactor", 1, 50, 1.0);
+	gui.add(opt, "heightMapSize", 1, 10, 1.0);
+	gui.add(opt, "terrainRoughness", 0, 5, 1.0);
+	gui.add(opt, "perlinSmoothing", 1, 50, 1.0);
 	gui.add(opt, "heightUpperLimit", 0, 256, 1.0);
 	gui.add(opt, "displaceAmount", 25, 100, 1.0);
 	gui.add(opt, "displaceExponent", 0.1, 10, 0.1);
-	gui.add(opt, "waterHeight", 0, 50);
+	gui.add(opt, "waterHeight", 0, 50, 1.0);
+	gui.add(opt, "waterRoughness", 0.0, 25, 0.5);
 	
 	// Set up initial map creation
 	textureHeightMap = new THREE.Texture(createHeightMapCanvas('heightmap-canvas'));
 	textureLow = new THREE.TextureLoader().load( 'res/low.jpg');
 	textureMed = new THREE.TextureLoader().load( 'res/med.jpg');
 	textureWaterNoise = new THREE.Texture(createWaterCanvas('water-canvas', time));
-	textureWater = new THREE.TextureLoader().load( 'res/water.jpg');
 	
 	textureHeightMap.needsUpdate = true;
 	textureWaterNoise.needsUpdate = true;
 	
 	container = document.getElementById( 'container' );
 
-	camera = new THREE.PerspectiveCamera( 50.0, window.innerWidth / window.innerHeight, 0.1, 1000 );
-	camera.position.x = 50;
-	camera.position.y = 50;
-	camera.position.z = 0;
+	camera = new THREE.PerspectiveCamera( 50.0, window.innerWidth / window.innerHeight, 0.1, 1500 );
+	camera.position.x = 200;
+	camera.position.y = 100;
+	
 	
 	//adds a default mouse listener to control the camera rotation and zoom
 	var controls = new THREE.OrbitControls( camera );
+	controls.target = new THREE.Vector3( 0, -150, 0 );
 	controls.update();
 
 	scene = new THREE.Scene();
 
 	// geometry
 
-	var terrainGeometry = new THREE.PlaneGeometry( 500, 500, 400, 400 );
-	var waterGeometry = new THREE.PlaneGeometry( 500, 500, 100, 100 );
-	var skyboxGeometry = new THREE.BoxGeometry( 500, 500, 500 );
+	var terrainGeometry = new THREE.PlaneGeometry( 250, 250, 400, 400 );
+	var waterGeometry = new THREE.PlaneGeometry( 250, 250, 100, 100 );
+	var skyboxGeometry = new THREE.BoxGeometry( 1000, 1000, 1000 );
 
 	// material
-
+	
+	var cubeMap = new THREE.CubeTextureLoader()
+		.setPath("res/skybox/")
+		.load( [
+			'posx.jpg',
+			'negx.jpg',
+			'posy.jpg',
+			'negy.jpg',
+			'posz.jpg',
+			'negz.jpg'
+		]);
+	
 	var terrainUniforms =  {
 		displaceAmt: { type: "f", value: opt.displaceAmount },
 		displaceExpt: { type: "f", value: opt.displaceExponent },
@@ -94,27 +105,19 @@ function init() {
 	} );
 	
 	var waterUniforms =  {
+		displaceAmt: { type: "f", value: opt.waterRoughness },
 		tPic: { type: "t", value: textureWaterNoise },
-		tWater: { type: "t", value: textureWater }
+		envMap: { type: "t", value: cubeMap }
 	};
 
 	var waterMaterial = new THREE.RawShaderMaterial( {
 		uniforms: waterUniforms,
 		vertexShader: waterVS,
-		fragmentShader: waterFS
+		fragmentShader: waterFS,
+		transparent: true
 	} );
 	
 	
-	var cubeMap = new THREE.CubeTextureLoader()
-		.setPath("res/skybox/")
-		.load( [
-			'posx.jpg',
-			'negx.jpg',
-			'posy.jpg',
-			'negy.jpg',
-			'posz.jpg',
-			'negz.jpg'
-		]);
 	var skyboxUniforms = { "tCube": { type: "t", value: cubeMap } };
 	
 	var skyboxMaterial = new THREE.RawShaderMaterial({
@@ -153,8 +156,8 @@ function init() {
 
 function createHeightMapCanvas(eleId) {
 	var canvas = document.getElementById(eleId);
-	var size = Math.pow(2, opt.size);
-	var cubeSize = Math.pow(2, opt.cubeSize);
+	var size = Math.pow(2, opt.heightMapSize);
+	var cubeSize = Math.pow(2, opt.terrainRoughness);
 	var height = width = size;
 	canvas.width  = width;
 	canvas.height = height;
@@ -167,8 +170,8 @@ function createHeightMapCanvas(eleId) {
 	}
 	
 	ctx.perlinChunk = function(x, y) {
-		var c = Math.floor(Math.abs(noise.perlin2(x / opt.perlinFactor,
-			y / opt.perlinFactor) * opt.heightUpperLimit));
+		var c = Math.floor(Math.abs(noise.perlin2(x / opt.perlinSmoothing,
+			y / opt.perlinSmoothing) * opt.heightUpperLimit));
 		this.colorChunk(x,y,'rgb('+c+','+c+','+c+')');
 	}
 	
@@ -264,6 +267,7 @@ function render() {
 		terrain.material.uniforms.displaceExpt.value = opt.displaceExponent;
 		terrain.material.uniforms.tPic.value = textureHeightMap;
 		water.position.y = -100 + opt.waterHeight;
+		water.material.uniforms.displaceAmt.value = opt.waterRoughness;
 	}
 	
 	// Update water height map

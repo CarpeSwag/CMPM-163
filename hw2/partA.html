@@ -98,34 +98,60 @@
 	uniform mat4 viewMatrix;
     uniform mat4 projectionMatrix;
 	uniform sampler2D tPic;
+	uniform float displaceAmt;
+	uniform vec3 cameraPosition;
 
     attribute vec3 position;
 	attribute vec2 uv;
 	attribute vec3 normal;
 	
-	varying vec2 vUv;
+	varying vec3 vNormal;
+	varying vec3 vI;
 
+	float height(vec2 point) {
+		vec4 clr = texture2D(tPic, point);
+		float displace = clr.r * displaceAmt; //displacement;
+        return vec3((position.xyz + normal.xyz * displace).xyz).z;
+	}
+	
 	void main() {
-		vUv = uv;
-		
 		vec4 clr = texture2D(tPic, uv);
-		float displace = clr.r * 5.0; //displacement;
+		float displace = clr.r * displaceAmt; //displacement;
         vec3 newPosition = (position.xyz + normal.xyz * displace).xyz;
+	
+		// Calculate new normal
+		vec3 off = vec3(1.0, 1.0, 0.0);
+		float hL = height(uv.xy - off.xz);
+		float hR = height(uv.xy + off.xz);
+		float hD = height(uv.xy - off.zy);
+		float hU = height(uv.xy + off.zy);
+		vNormal = normalize(vec3(hL - hR, hD - hU, 2.0));
+		
+		vec4 worldPosition = modelMatrix * vec4( newPosition, 1.0 );
+		
+		vI = normalize(worldPosition.xyz - cameraPosition);
       
-       	gl_Position = projectionMatrix  * viewMatrix * modelMatrix  * vec4( newPosition, 1.0 );
+       	gl_Position = projectionMatrix * viewMatrix * worldPosition;
     }
 	</script>
 	<script id="water-fs" type="x-shader/x-fragment">
     precision mediump float;
 
-    uniform sampler2D tWater;
+	uniform samplerCube envMap;
 
-    varying vec2 vUv;
+	varying vec3 vNormal;
+	varying vec3 vI;
 
     void main() {
-		vec4 water = texture2D(tWater, vUv);
+		vec3 reflection = reflect(vI, vNormal);
 
-		gl_FragColor = vec4( water.rgb, 1.0 );        
+		vec4 envColor = textureCube( envMap, vec3( reflection.x, -reflection.yz ) );
+		vec4 waterColor = vec4(0.188, 0.29, 0.39, 1.0); // Tint the water dark blueish
+		vec4 finalColor = mix(envColor, waterColor, 0.5);
+		
+		float fresnel = 1.0 - dot(vI, vNormal);
+		
+		gl_FragColor = vec4(finalColor.xyz, fresnel);
 	}
 	</script>
 	
