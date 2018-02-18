@@ -131,7 +131,7 @@
 		
 		vec4 worldPosition = modelMatrix * vec4( newPosition, 1.0 );
 		
-		vI = worldPosition.xyz - cameraPosition;
+		vI = normalize(worldPosition.xyz - cameraPosition);
       
        	gl_Position = projectionMatrix * viewMatrix * worldPosition;
     }
@@ -145,11 +145,15 @@
 	varying vec3 vI;
 
     void main() {
-		vec3 reflection = reflect( vI, vNormal );
+		vec3 reflection = reflect(vI, vNormal);
 
 		vec4 envColor = textureCube( envMap, vec3( reflection.x, -reflection.yz ) );
 		vec4 waterColor = vec4(0.188, 0.29, 0.39, 1.0); // Tint the water dark blueish
-		gl_FragColor = mix(envColor, waterColor, 0.25);
+		vec4 finalColor = mix(envColor, waterColor, 0.25);
+		
+		float fresnel = 1.0 - dot(vI, vNormal);
+		
+		gl_FragColor = vec4(finalColor.xyz, fresnel);
 	}
 	</script>
 	

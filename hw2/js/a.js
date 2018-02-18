@@ -114,7 +114,8 @@ function init() {
 	var waterMaterial = new THREE.RawShaderMaterial( {
 		uniforms: waterUniforms,
 		vertexShader: waterVS,
-		fragmentShader: waterFS
+		fragmentShader: waterFS,
+		transparent: true
 	} );
 	
 	
