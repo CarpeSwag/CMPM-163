@@ -3,9 +3,11 @@ var container;
 var camera, scene, renderer;
 var terrainVS, terrainFS;
 var skyboxVS, skyboxFS;
-var texture1, texture2, texture3, texture4;
+var textureHeightMap, textureLow, textureMed, textureHigh;
 var seed;
-var size, cubeSize, perlinFactor, heightUpper, heightLower;
+// Values that can be adjusted with the GUI
+var size, cubeSize, perlinFactor, heightUpper, heightLower,
+	displaceAmt, displaceExpt, waterHeight;
 
 function init() {
 	terrainVS = document.getElementById( 'terrain-vs' ).textContent;
@@ -22,20 +24,23 @@ function init() {
 	perlinFactor = size / 20;
 	heightUpper = 256;
 	heightLower = 0;
+	displaceAmt = 25;
+	displaceExpt = 1.0;
+	waterHeight = 0;
 	
 	var canvas = createHeightMapCanvas('heightmap-canvas');
-	texture1 = new THREE.Texture(canvas);
-	texture2 = new THREE.TextureLoader().load( 'res/grass.png' );
-	texture3 = new THREE.TextureLoader().load( 'res/snow.jpg' );
-	texture4 = new THREE.TextureLoader().load( 'res/hill.jpg' );
+	textureHeightMap = new THREE.Texture(canvas);
+	textureLow = new THREE.TextureLoader().load( 'res/low.jpg' );
+	textureMed = new THREE.TextureLoader().load( 'res/med.jpg' );
+	textureHigh = new THREE.TextureLoader().load( 'res/high.jpg' );
 	
-	texture1.needsUpdate = true;
+	textureHeightMap.needsUpdate = true;
 	
 	container = document.getElementById( 'container' );
 
-	camera = new THREE.PerspectiveCamera( 50.0, window.innerWidth / window.innerHeight, 0.1, 100 );
-	camera.position.x = 5;
-	camera.position.y = 5;
+	camera = new THREE.PerspectiveCamera( 50.0, window.innerWidth / window.innerHeight, 0.1, 1000 );
+	camera.position.x = 50;
+	camera.position.y = 50;
 	camera.position.z = 0;
 	
 	//adds a default mouse listener to control the camera rotation and zoom
@@ -46,17 +51,18 @@ function init() {
 
 	// geometry
 
-	var terrainGeometry = new THREE.PlaneGeometry( 10, 10, 400, 400 );
-	var skyboxGeometry = new THREE.BoxGeometry( 50, 50, 50 );
+	var terrainGeometry = new THREE.PlaneGeometry( 250, 250, 400, 400 );
+	var skyboxGeometry = new THREE.BoxGeometry( 500, 500, 500 );
 
 	// material
 
 	var terrainUniforms =  {
-		displaceAmt: { type: "f", value: 0.0 },
-		tPic: { type: "t", value: texture1  },
-		tGrass: { type: "t", value: texture2  },
-		tSnow: { type: "t", value: texture3  },
-		tHill: { type: "t", value: texture4  },
+		displaceAmt: { type: "f", value: displaceAmt },
+		displaceExpt: { type: "f", value: displaceExpt },
+		tPic: { type: "t", value: textureHeightMap },
+		tLow: { type: "t", value: textureLow },
+		tMed: { type: "t", value: textureMed },
+		tHigh: { type: "t", value: textureHigh },
 	};
 
 	var terrainMaterial = new THREE.RawShaderMaterial( {
@@ -91,7 +97,7 @@ function init() {
 	var terrainMesh = new THREE.Mesh( terrainGeometry, terrainMaterial );
 	terrainMesh.material.side = THREE.DoubleSide;
 	terrainMesh.rotateX(-Math.PI/2);
-	terrainMesh.position.y = -1;
+	terrainMesh.position.y = -50;
 	scene.add( terrainMesh );
 	
 	var skyboxMesh = new THREE.Mesh( skyboxGeometry, skyboxMaterial );
@@ -155,9 +161,7 @@ function render() {
 	var time = performance.now();
 
 	var object0 = scene.children[ 0 ];
-	//	object0.material.uniforms.displaceAmt.value = 0.5 * (1.0 + Math.sin(time * 0.001)); 
-
-		object0.material.uniforms.displaceAmt.value = 1.0;
+	//object0.material.uniforms.displaceExpt.value = 1.0;
 
 
 	renderer.render( scene, camera );

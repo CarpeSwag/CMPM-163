@@ -15,6 +15,8 @@
 	
 	<!-- Terrain Shaders -->
     <script id="terrain-vs" type="x-shader/x-vertex">
+    precision mediump float;
+	
 	uniform mat4 modelMatrix;
 	uniform mat4 viewMatrix;
     uniform mat4 projectionMatrix;
@@ -24,18 +26,17 @@
 	attribute vec2 uv;
 	attribute vec3 normal;
 
-	uniform float displaceAmt; //controls the amount of vertex displacement...
+	uniform float displaceAmt; // controls the amount of vertex displacement...
+	uniform float displaceExpt; // vertex displacement exponent
 	
     varying float vDisplace; 
 	varying vec2 vUv;
-
-    precision mediump float;
 
 	void main() {
 		vUv = uv;
 		
 		vec4 clr = texture2D(tPic, uv);
-		vDisplace = clr.r * displaceAmt; //displacement;
+		vDisplace = pow(clr.r, abs(displaceExpt)) * displaceAmt; //displacement;
         vec3 newPosition = (position.xyz + normal.xyz * vDisplace).xyz;
       
        	gl_Position = projectionMatrix  * viewMatrix * modelMatrix  * vec4( newPosition, 1.0 );
@@ -44,24 +45,23 @@
 	<script id="terrain-fs" type="x-shader/x-fragment">
     precision mediump float;
 
-    uniform sampler2D tGrass, tSnow, tHill;
+    uniform sampler2D tLow, tMed, tHigh;
 
     varying vec2 vUv;
-    varying float vDisplace; 
+    varying float vDisplace;
+	uniform float displaceAmt;
 
     void main() {
-		vec4 grass = texture2D(tGrass, vUv);
-		vec4 snow = texture2D(tSnow, vUv);
-		vec4 hill = texture2D(tHill, vUv);
+		vec4 low = texture2D(tLow, vUv);
+		vec4 med = texture2D(tMed, vUv);
+		vec4 high = texture2D(tHigh, vUv);
 
-		float zOffset = vDisplace;
+		float zOffset = vDisplace / displaceAmt;
 
-		vec4 mix1 = mix(grass, hill, min(1.0,zOffset*8.0));
-		vec4 mix2 = max(vec4(1.0), mix(hill, snow, zOffset) * 1.5);
-		vec4 mix3 = mix(mix1, mix2, zOffset);
+		vec4 mix1 = mix(low, med, min(1.0,zOffset*8.0));
 
 
-		gl_FragColor = vec4( mix3.rgb, 1.0 );        
+		gl_FragColor = vec4( mix1.rgb, 1.0 );        
 	}
 	</script>
 	
